@@ -9,12 +9,14 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersRepository } from 'src/database/repositories/users.repositories';
 import { hash, compare } from 'bcryptjs';
 import { SigninDto } from './dto/signin.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   async signin(signinDto: SigninDto) {
@@ -27,13 +29,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const isPasswordValid = await compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials.');
+      throw new UnauthorizedException('Credenciais inválidas.');
     }
 
     const accessToken = await this.generateAccessToken(user.id);
@@ -54,7 +56,7 @@ export class AuthService {
     });
 
     if (emailTaken) {
-      throw new ConflictException('This email is already in use.');
+      throw new ConflictException('Esse email já está em uso.');
     }
 
     const hashedPassword = await hash(password, 10);
@@ -67,7 +69,12 @@ export class AuthService {
       },
     });
 
-    return user;
+    // Create bank for the new user
+    await this.usersService.createUserBank(user.id);
+
+    const accessToken = await this.generateAccessToken(user.id);
+
+    return { accessToken };
   }
 
   private async generateAccessToken(userId: string) {

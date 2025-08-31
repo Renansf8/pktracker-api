@@ -1,26 +1,38 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersRepository } from 'src/database/repositories/users.repositories';
+import { BanksRepository } from 'src/database/repositories/banks.repositories';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly banksRepository: BanksRepository,
+  ) {}
+
+  async getUserById(userId: string) {
+    const user = await this.usersRepository.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        email: true,
+      },
+    });
+
+    const bank = await this.banksRepository.findByUserId(userId);
+
+    return {
+      ...user,
+      bank,
+    };
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
+  async createUserBank(userId: string) {
+    const existingBank = await this.banksRepository.findByUserId(userId);
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    if (!existingBank) {
+      return this.banksRepository.create(userId);
+    }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    return existingBank;
   }
 }
