@@ -43,9 +43,12 @@ export class TournamentsService {
     return tournament;
   }
 
-  findAll(userId: string) {
+  findAll(userId: string, filters?: { platform?: string }) {
     return this.tournamentsRepository.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(filters?.platform && { platform: filters.platform }),
+      },
       orderBy: { date: 'desc' },
     });
   }

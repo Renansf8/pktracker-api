@@ -6,11 +6,12 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
+  Query,
 } from '@nestjs/common';
 import { TournamentsService } from './tournaments.service';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
+import { FilterTournamentsDto } from './dto/filter-tournaments.dto';
 import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 
 @Controller('tournaments')
@@ -26,8 +27,11 @@ export class TournamentsController {
   }
 
   @Get()
-  findAll(@ActiveUserId() userId: string) {
-    return this.tournamentsService.findAll(userId);
+  findAll(
+    @ActiveUserId() userId: string,
+    @Query() filters: FilterTournamentsDto,
+  ) {
+    return this.tournamentsService.findAll(userId, filters);
   }
 
   // @Get(':id')
