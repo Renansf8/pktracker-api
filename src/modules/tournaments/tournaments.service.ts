@@ -79,20 +79,17 @@ export class TournamentsService {
     const tournament = await this.tournamentsRepository.findUnique({
       where: { id, userId },
     });
+    const bank = await this.banksRepository.findByUserId(userId);
 
     if (!tournament) {
       throw new Error('Tournament not found');
     }
 
     // Update bank to remove tournament results
-    const bank = await this.banksRepository.findByUserId(userId);
-    // await this.banksRepository.update({
-    //   where: { id: bank.id },
-    //   data: {
-    //     bank: bank.bank - tournament.profit,
-    //     profit: bank.profit - tournament.profit,
-    //   },
-    // });
+    await this.banksRepository.update(bank.id, {
+      bank: bank.bank - tournament.profit,
+      profit: bank.profit - tournament.profit,
+    });
 
     return this.tournamentsRepository.delete({
       where: { id },

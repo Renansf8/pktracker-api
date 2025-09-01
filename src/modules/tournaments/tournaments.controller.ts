@@ -40,8 +40,8 @@ export class TournamentsController {
   //   return this.tournamentsService.update(+id, updateTournamentDto);
   // }
 
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.tournamentsService.remove(+id);
-  // }
+  @Delete(':id')
+  remove(@Param('id') id: string, @ActiveUserId() userId: string) {
+    return this.tournamentsService.remove(userId, id);
+  }
 }
