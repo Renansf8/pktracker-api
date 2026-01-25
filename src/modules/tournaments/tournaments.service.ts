@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
+import { FilterTournamentsDto } from './dto/filter-tournaments.dto';
 import { TournamentsRepository } from 'src/database/repositories/tournaments.repository';
 import { BanksRepository } from 'src/database/repositories/banks.repositories';
 
@@ -43,14 +44,46 @@ export class TournamentsService {
     return tournament;
   }
 
-  findAll(userId: string, filters?: { platform?: string }) {
-    return this.tournamentsRepository.findMany({
-      where: {
-        userId,
-        ...(filters?.platform && { platform: filters.platform }),
-      },
+  async findAll(userId: string, filters?: FilterTournamentsDto) {
+    const page = Math.max(1, Number(filters?.page) || 1);
+    const limit = Math.max(1, Number(filters?.limit) || 10);
+    const skip = (page - 1) * limit;
+
+    const where = {
+      userId,
+      ...(filters?.platform && { platform: filters.platform }),
+    };
+
+    const skipValue = Number.isNaN(skip) || skip < 0 ? 0 : skip;
+    const takeValue = Number.isNaN(limit) || limit <= 0 ? 10 : limit;
+    
+    const queryParams: any = {
+      where,
       orderBy: { date: 'desc' },
-    });
+    };
+
+    if (skipValue > 0) {
+      queryParams.skip = skipValue;
+    }
+    
+    if (takeValue > 0) {
+      queryParams.take = takeValue;
+    }
+
+
+    const [data, total] = await Promise.all([
+      this.tournamentsRepository.findMany(queryParams),
+      this.tournamentsRepository.count({ where }),
+    ]);
+
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      totalPages,
+      total
+    };
   }
 
   findOne(userId: string, id: string) {

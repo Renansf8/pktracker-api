@@ -16,6 +16,10 @@ export class TournamentsRepository {
     return this.prismaService.tournament.findMany(findManyDto);
   }
 
+  count(countDto: Prisma.TournamentCountArgs) {
+    return this.prismaService.tournament.count(countDto);
+  }
+
   findUnique(findUniqueDto: Prisma.TournamentFindUniqueArgs) {
     return this.prismaService.tournament.findUnique(findUniqueDto);
   }
