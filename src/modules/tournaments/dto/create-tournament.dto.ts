@@ -1,4 +1,10 @@
-import { IsDateString, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateTournamentDto {
   @IsString()
@@ -18,10 +24,8 @@ export class CreateTournamentDto {
   currency: string;
 
   @IsNumber()
-  @IsNotEmpty()
-  result: number;
-
-  profit: number;
+  @IsOptional()
+  result?: number;
 
   @IsDateString()
   @IsNotEmpty()
