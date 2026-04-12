@@ -10,6 +10,7 @@ import { UsersRepository } from 'src/database/repositories/users.repositories';
 import { hash, compare } from 'bcryptjs';
 import { SigninDto } from './dto/signin.dto';
 import { UsersService } from '../users/users.service';
+import { isEmailAllowed } from 'src/shared/config/env';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,10 @@ export class AuthService {
 
   async signin(signinDto: SigninDto) {
     const { email, password } = signinDto;
+
+    if (!isEmailAllowed(email)) {
+      throw new UnauthorizedException('Credenciais inválidas.');
+    }
 
     const user = await this.usersRepository.findUnique({
       where: {
@@ -45,6 +50,10 @@ export class AuthService {
 
   async signup(signupDto: SignupDto) {
     const { name, email, password } = signupDto;
+
+    if (!isEmailAllowed(email)) {
+      throw new UnauthorizedException('Credenciais inválidas.');
+    }
 
     const emailTaken = await this.usersRepository.findUnique({
       where: {
