@@ -7,9 +7,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './modules/auth/auth.guard';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
 import { BanksModule } from './modules/banks/banks.module';
+import { StatsModule } from './modules/stats/stats.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, DatabaseModule, TournamentsModule, BanksModule],
+  imports: [UsersModule, AuthModule, DatabaseModule, TournamentsModule, BanksModule, StatsModule],
   controllers: [],
   providers: [
     {
