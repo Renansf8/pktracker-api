@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsDateString,
   IsNotEmpty,
   IsNumber,
@@ -26,6 +27,14 @@ export class CreateTournamentDto {
   @IsNumber()
   @IsOptional()
   result?: number;
+
+  @IsBoolean()
+  @IsNotEmpty()
+  itm: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  position?: number;
 
   @IsDateString()
   @IsNotEmpty()

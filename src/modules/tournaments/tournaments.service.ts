@@ -31,6 +31,8 @@ export class TournamentsService {
       currency: createTournamentDto.currency,
       result: hasResult ? createTournamentDto.result!.toString() : null,
       profit,
+      itm: createTournamentDto.itm,
+      position: createTournamentDto.itm ? (createTournamentDto.position ?? null) : null,
       date: new Date(createTournamentDto.date),
       user: {
         connect: { id: userId },
@@ -72,6 +74,8 @@ export class TournamentsService {
         currency: dto.currency,
         result: hasResult ? dto.result!.toString() : null,
         profit,
+        itm: dto.itm,
+        position: dto.itm ? (dto.position ?? null) : null,
         date: new Date(dto.date),
         user: { connect: { id: userId } },
         bank: { connect: { id: bank.id } },
@@ -238,6 +242,10 @@ export class TournamentsService {
         }),
         ...(updateTournamentDto.date !== undefined && {
           date: new Date(updateTournamentDto.date),
+        }),
+        ...(updateTournamentDto.itm !== undefined && {
+          itm: updateTournamentDto.itm,
+          position: updateTournamentDto.itm ? (updateTournamentDto.position ?? null) : null,
         }),
         ...(updateTournamentDto.buyIn !== undefined ||
         updateTournamentDto.result !== undefined
