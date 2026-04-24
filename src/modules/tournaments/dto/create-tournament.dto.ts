@@ -32,6 +32,10 @@ export class CreateTournamentDto {
   @IsNotEmpty()
   itm: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  hasFt?: boolean;
+
   @IsNumber()
   @IsOptional()
   position?: number;

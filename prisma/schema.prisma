@@ -75,6 +75,7 @@ model Tournament {
   result   String?
   profit   Float    @default(0)
   itm      Boolean  @default(false)
+  hasFt    Boolean  @default(false) @map("has_ft")
   position Int?
   date     DateTime
 

@@ -247,6 +247,9 @@ export class TournamentsService {
           itm: updateTournamentDto.itm,
           position: updateTournamentDto.itm ? (updateTournamentDto.position ?? null) : null,
         }),
+        ...(updateTournamentDto.hasFt !== undefined && {
+          hasFt: updateTournamentDto.hasFt,
+        }),
         ...(updateTournamentDto.buyIn !== undefined ||
         updateTournamentDto.result !== undefined
           ? {
