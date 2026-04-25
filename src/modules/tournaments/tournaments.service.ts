@@ -42,6 +42,8 @@ export class TournamentsService {
       result: createTournamentDto.result !== undefined ? createTournamentDto.result.toString() : null,
       profit,
       itm: createTournamentDto.itm,
+      hasFt: createTournamentDto.hasFt ?? false,
+      hasSecondDay: createTournamentDto.hasSecondDay ?? false,
       position: createTournamentDto.itm ? (createTournamentDto.position ?? null) : null,
       date: new Date(createTournamentDto.date),
       user: {
@@ -94,6 +96,8 @@ export class TournamentsService {
         result: dto.result !== undefined ? dto.result.toString() : null,
         profit,
         itm: dto.itm,
+        hasFt: dto.hasFt ?? false,
+        hasSecondDay: dto.hasSecondDay ?? false,
         position: dto.itm ? (dto.position ?? null) : null,
         date: new Date(dto.date),
         user: { connect: { id: userId } },
@@ -283,6 +287,9 @@ export class TournamentsService {
         }),
         ...(updateTournamentDto.hasFt !== undefined && {
           hasFt: updateTournamentDto.hasFt,
+        }),
+        ...(updateTournamentDto.hasSecondDay !== undefined && {
+          hasSecondDay: updateTournamentDto.hasSecondDay,
         }),
         ...(updateTournamentDto.buyIn !== undefined ||
         updateTournamentDto.result !== undefined

@@ -37,6 +37,10 @@ export class CreateTournamentDto {
   @IsOptional()
   hasFt?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  hasSecondDay?: boolean;
+
   @IsNumber()
   @IsOptional()
   position?: number;

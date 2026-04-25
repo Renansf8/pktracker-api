@@ -6,6 +6,7 @@ import {
 import { BanksRepository } from '../../database/repositories/banks.repositories';
 import { CreateDepositDto } from './dto/create-deposit.dto';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
+import { CreateRakeDto } from './dto/create-rake.dto';
 
 @Injectable()
 export class BanksService {
@@ -43,5 +44,15 @@ export class BanksService {
       }
       throw error;
     }
+  }
+
+  async createRake(userId: string, createRakeDto: CreateRakeDto) {
+    const bank = await this.validateAndGetBank(userId);
+    return this.banksRepository.createRake(bank.id, createRakeDto.amount);
+  }
+
+  async getRakeHistory(userId: string) {
+    const bank = await this.validateAndGetBank(userId);
+    return this.banksRepository.findRakesByBankId(bank.id);
   }
 }

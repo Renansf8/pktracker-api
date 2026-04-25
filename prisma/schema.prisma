@@ -32,12 +32,14 @@ model Bank {
   bank            Float
   totalDeposit    Float  @map("total_deposit")
   totalWithdrawal Float  @map("total_withdrawal")
+  totalRake       Float  @default(0) @map("total_rake")
   profit          Float
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   Tournament  Tournament[]
   deposits    Deposit[]
   withdrawals Withdrawal[]
+  rakes       Rake[]
 
   @@map("banks")
 }
@@ -64,6 +66,17 @@ model Withdrawal {
   @@map("withdrawals")
 }
 
+model Rake {
+  id     String   @id @default(uuid()) @db.Uuid
+  bankId String   @map("bank_id") @db.Uuid
+  amount Float
+  date   DateTime
+
+  bank Bank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+
+  @@map("rakes")
+}
+
 model Tournament {
   id       String   @id @default(uuid()) @db.Uuid
   userId   String   @map("user_id") @db.Uuid
@@ -75,8 +88,9 @@ model Tournament {
   result   String?
   profit   Float    @default(0)
   itm      Boolean  @default(false)
-  hasFt    Boolean  @default(false) @map("has_ft")
-  position Int?
+  hasFt         Boolean  @default(false) @map("has_ft")
+  hasSecondDay  Boolean  @default(false) @map("has_second_day")
+  position      Int?
   date     DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -79,7 +79,43 @@ export class BanksRepository {
             date: 'desc',
           },
         },
+        rakes: {
+          orderBy: {
+            date: 'desc',
+          },
+        },
       },
+    });
+  }
+
+  async createRake(bankId: string, amount: number) {
+    const bank = await this.validateBankExists(bankId);
+
+    return this.prismaService.$transaction(async (prisma) => {
+      const rake = await prisma.rake.create({
+        data: {
+          bankId,
+          amount,
+          date: new Date(),
+        },
+      });
+
+      await prisma.bank.update({
+        where: { id: bankId },
+        data: {
+          bank: bank.bank + amount,
+          totalRake: bank.totalRake + amount,
+        },
+      });
+
+      return rake;
+    });
+  }
+
+  findRakesByBankId(bankId: string) {
+    return this.prismaService.rake.findMany({
+      where: { bankId },
+      orderBy: { date: 'desc' },
     });
   }
 
