@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { IsNumberOrTicket } from 'src/shared/validators/is-number-or-ticket.validator';
 
 export class CreateTournamentDto {
   @IsString()
@@ -16,17 +17,17 @@ export class CreateTournamentDto {
   @IsNotEmpty()
   platform: string;
 
-  @IsNumber()
   @IsNotEmpty()
-  buyIn: number;
+  @IsNumberOrTicket()
+  buyIn: number | 'ticket';
 
   @IsString()
   @IsNotEmpty()
   currency: string;
 
-  @IsNumber()
   @IsOptional()
-  result?: number;
+  @IsNumberOrTicket()
+  result?: number | 'ticket';
 
   @IsBoolean()
   @IsNotEmpty()

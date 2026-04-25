@@ -70,7 +70,7 @@ model Tournament {
   bankId   String   @map("bank_id") @db.Uuid
   name     String
   platform String
-  buyIn    Float
+  buyIn    String
   currency String
   result   String?
   profit   Float    @default(0)

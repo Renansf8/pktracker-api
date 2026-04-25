@@ -21,15 +21,25 @@ export class TournamentsService {
       throw new Error('Bank not found for this user');
     }
 
-    const hasResult = createTournamentDto.result !== undefined;
-    const profit = hasResult ? createTournamentDto.result! - createTournamentDto.buyIn : 0;
+    const buyInIsTicket = createTournamentDto.buyIn === 'ticket';
+    const resultIsTicket = createTournamentDto.result === 'ticket';
+    const hasNumericResult =
+      createTournamentDto.result !== undefined && !resultIsTicket;
+
+    const profit = buyInIsTicket
+      ? hasNumericResult ? (createTournamentDto.result as number) : 0 // paid with ticket: profit = result, or 0 if no result
+      : resultIsTicket
+        ? -(createTournamentDto.buyIn as number) // spent buyIn, got a ticket back
+        : hasNumericResult
+          ? (createTournamentDto.result as number) - (createTournamentDto.buyIn as number)
+          : 0;
 
     const tournament = await this.tournamentsRepository.create({
       name: createTournamentDto.name,
       platform: createTournamentDto.platform,
-      buyIn: createTournamentDto.buyIn,
+      buyIn: createTournamentDto.buyIn.toString(),
       currency: createTournamentDto.currency,
-      result: hasResult ? createTournamentDto.result!.toString() : null,
+      result: createTournamentDto.result !== undefined ? createTournamentDto.result.toString() : null,
       profit,
       itm: createTournamentDto.itm,
       position: createTournamentDto.itm ? (createTournamentDto.position ?? null) : null,
@@ -63,16 +73,25 @@ export class TournamentsService {
     let profitSum = 0;
 
     for (const dto of tournaments) {
-      const hasResult = dto.result !== undefined;
-      const profit = hasResult ? dto.result! - dto.buyIn : 0;
+      const buyInIsTicket = dto.buyIn === 'ticket';
+      const resultIsTicket = dto.result === 'ticket';
+      const hasNumericResult = dto.result !== undefined && !resultIsTicket;
+
+      const profit = buyInIsTicket
+        ? hasNumericResult ? (dto.result as number) : 0
+        : resultIsTicket
+          ? -(dto.buyIn as number)
+          : hasNumericResult
+            ? (dto.result as number) - (dto.buyIn as number)
+            : 0;
       profitSum += profit;
 
       const tournament = await this.tournamentsRepository.create({
         name: dto.name,
         platform: dto.platform,
-        buyIn: dto.buyIn,
+        buyIn: dto.buyIn.toString(),
         currency: dto.currency,
-        result: hasResult ? dto.result!.toString() : null,
+        result: dto.result !== undefined ? dto.result.toString() : null,
         profit,
         itm: dto.itm,
         position: dto.itm ? (dto.position ?? null) : null,
@@ -123,7 +142,7 @@ export class TournamentsService {
       const tournament = await this.tournamentsRepository.create({
         name: item.name,
         platform: item.platform,
-        buyIn: item.buyIn,
+        buyIn: item.buyIn.toString(),
         currency: item.currency,
         result: null,
         profit: 0,
@@ -206,22 +225,35 @@ export class TournamentsService {
     }
 
     const currentProfit = tournament.profit ?? 0;
-    const currentResultNumber =
-      tournament.result !== null && tournament.result !== undefined
-        ? Number(tournament.result)
-        : NaN;
-    const nextBuyIn =
+
+    // Resolve effective buyIn after update
+    const nextBuyIn: number | 'ticket' =
       updateTournamentDto.buyIn !== undefined
         ? updateTournamentDto.buyIn
-        : tournament.buyIn;
-    const nextResultNumber =
+        : tournament.buyIn === 'ticket'
+          ? 'ticket'
+          : parseFloat(tournament.buyIn);
+
+    // Resolve effective result after update
+    const nextResult: number | 'ticket' | undefined =
       updateTournamentDto.result !== undefined
         ? updateTournamentDto.result
-        : Number.isFinite(currentResultNumber)
-          ? currentResultNumber
-          : undefined;
-    const nextProfit =
-      nextResultNumber === undefined ? currentProfit : nextResultNumber - nextBuyIn;
+        : tournament.result === 'ticket'
+          ? 'ticket'
+          : tournament.result !== null && tournament.result !== undefined
+            ? parseFloat(tournament.result)
+            : undefined;
+
+    const nextBuyInIsTicket = nextBuyIn === 'ticket';
+    const nextResultIsTicket = nextResult === 'ticket';
+
+    const nextProfit = nextBuyInIsTicket
+      ? nextResult !== undefined && !nextResultIsTicket ? (nextResult as number) : 0
+      : nextResultIsTicket
+        ? -(nextBuyIn as number)
+        : nextResult === undefined
+          ? currentProfit
+          : (nextResult as number) - (nextBuyIn as number);
     const profitDelta = nextProfit - currentProfit;
 
     const updatedTournament = await this.tournamentsRepository.update({
@@ -236,9 +268,11 @@ export class TournamentsService {
         ...(updateTournamentDto.currency !== undefined && {
           currency: updateTournamentDto.currency,
         }),
-        ...(updateTournamentDto.buyIn !== undefined && { buyIn: nextBuyIn }),
+        ...(updateTournamentDto.buyIn !== undefined && {
+          buyIn: nextBuyIn.toString(),
+        }),
         ...(updateTournamentDto.result !== undefined && {
-          result: nextResultNumber.toString(),
+          result: nextResult !== undefined ? nextResult.toString() : null,
         }),
         ...(updateTournamentDto.date !== undefined && {
           date: new Date(updateTournamentDto.date),
@@ -252,12 +286,7 @@ export class TournamentsService {
         }),
         ...(updateTournamentDto.buyIn !== undefined ||
         updateTournamentDto.result !== undefined
-          ? {
-              profit: nextProfit,
-              ...(updateTournamentDto.result !== undefined
-                ? { result: nextResultNumber!.toString() }
-                : {}),
-            }
+          ? { profit: nextProfit }
           : {}),
       },
     });

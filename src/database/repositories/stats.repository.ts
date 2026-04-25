@@ -28,18 +28,24 @@ export class StatsRepository {
    * Returns the tournament with the largest buy-in for a given user, or null
    * if the user has no tournaments yet.
    */
-  findBiggestBuyInTournament(userId: string) {
-    return this.prismaService.tournament.findFirst({
-      where: { userId },
-      orderBy: [{ buyIn: 'desc' }, { date: 'desc' }],
-      select: {
-        id: true,
-        name: true,
-        platform: true,
-        date: true,
-        buyIn: true,
-      },
-    });
+  async findBiggestBuyInTournament(
+    userId: string,
+  ): Promise<{ id: string; name: string; platform: string; date: Date; buyIn: string } | null> {
+    const rows = await this.prismaService.$queryRawUnsafe<
+      { id: string; name: string; platform: string; date: Date; buyIn: string }[]
+    >(
+      `
+        SELECT id, name, platform, date, "buyIn"
+        FROM tournaments
+        WHERE user_id = $1::uuid
+          AND "buyIn" != 'ticket'
+        ORDER BY CAST("buyIn" AS FLOAT) DESC, date DESC
+        LIMIT 1
+      `,
+      userId,
+    );
+
+    return rows.length ? rows[0] : null;
   }
 
   /**
@@ -129,11 +135,12 @@ export class StatsRepository {
   ): Promise<{ date: Date; abi: number; tournaments: number } | null> {
     const rows = await this.prismaService.$queryRawUnsafe<AbiAggregateRow[]>(
       `
-        SELECT date_trunc('day', date) AS day,
-               AVG("buyIn")            AS abi,
-               COUNT(*)                AS total
+        SELECT date_trunc('day', date)       AS day,
+               AVG(CAST("buyIn" AS FLOAT))   AS abi,
+               COUNT(*)                       AS total
         FROM tournaments
         WHERE user_id = $1::uuid
+          AND "buyIn" != 'ticket'
         GROUP BY day
         ORDER BY abi DESC, day DESC
         LIMIT 1

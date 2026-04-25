@@ -40,17 +40,18 @@ export class StatsService {
       this.statsRepository.findHighestAbiDay(userId),
     ]);
 
-    const biggestBuyIn: BiggestBuyIn | null = biggestBuyInTournament
-      ? {
-          value: biggestBuyInTournament.buyIn,
-          tournament: {
-            id: biggestBuyInTournament.id,
-            name: biggestBuyInTournament.name,
-            platform: biggestBuyInTournament.platform,
-            date: biggestBuyInTournament.date,
-          },
-        }
-      : null;
+    const biggestBuyIn: BiggestBuyIn | null =
+      biggestBuyInTournament && biggestBuyInTournament.buyIn !== 'ticket'
+        ? {
+            value: parseFloat(biggestBuyInTournament.buyIn),
+            tournament: {
+              id: biggestBuyInTournament.id,
+              name: biggestBuyInTournament.name,
+              platform: biggestBuyInTournament.platform,
+              date: biggestBuyInTournament.date,
+            },
+          }
+        : null;
 
     const profitRecords: ProfitRecords = {
       day: profitDayRecord,
