@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { FilterTournamentsDto } from './dto/filter-tournaments.dto';
@@ -169,6 +170,9 @@ export class TournamentsService {
     const where = {
       userId,
       ...(filters?.platform && { platform: filters.platform }),
+      ...(filters?.name && {
+        name: { contains: filters.name, mode: Prisma.QueryMode.insensitive },
+      }),
     };
 
     const skipValue = Number.isNaN(skip) || skip < 0 ? 0 : skip;
@@ -188,18 +192,23 @@ export class TournamentsService {
     }
 
 
-    const [data, total] = await Promise.all([
+    const [data, total, aggregate] = await Promise.all([
       this.tournamentsRepository.findMany(queryParams),
       this.tournamentsRepository.count({ where }),
+      this.tournamentsRepository.aggregate({
+        where,
+        _sum: { profit: true },
+      }),
     ]);
 
-
     const totalPages = Math.ceil(total / limit);
+    const totalProfit = aggregate._sum.profit ?? 0;
 
     return {
       data,
       totalPages,
-      total
+      total,
+      totalProfit,
     };
   }
 

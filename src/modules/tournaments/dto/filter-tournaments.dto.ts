@@ -7,6 +7,10 @@ export class FilterTournamentsDto {
   platform?: string;
 
   @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

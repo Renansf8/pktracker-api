@@ -31,4 +31,8 @@ export class TournamentsRepository {
   delete(deleteDto: Prisma.TournamentDeleteArgs) {
     return this.prismaService.tournament.delete(deleteDto);
   }
+
+  aggregate(aggregateDto: Prisma.TournamentAggregateArgs) {
+    return this.prismaService.tournament.aggregate(aggregateDto);
+  }
 }
