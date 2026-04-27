@@ -4,7 +4,7 @@ import { CreateTournamentScheduleItemDto } from './dto/create-tournament-schedul
 import { UpdateTournamentScheduleItemDto } from './dto/update-tournament-schedule-item.dto';
 import { TournamentScheduleItemsService } from './tournament-schedule-items.service';
 
-@Controller('tournaments/schedule')
+@Controller('tournaments/schedules/:scheduleId/items')
 export class TournamentScheduleItemsController {
   constructor(
     private readonly tournamentScheduleItemsService: TournamentScheduleItemsService,
@@ -13,28 +13,36 @@ export class TournamentScheduleItemsController {
   @Post()
   create(
     @ActiveUserId() userId: string,
+    @Param('scheduleId') scheduleId: string,
     @Body() dto: CreateTournamentScheduleItemDto,
   ) {
-    return this.tournamentScheduleItemsService.create(userId, dto);
+    return this.tournamentScheduleItemsService.create(userId, scheduleId, dto);
   }
 
   @Get()
-  findAll(@ActiveUserId() userId: string) {
-    return this.tournamentScheduleItemsService.findAll(userId);
+  findAll(
+    @ActiveUserId() userId: string,
+    @Param('scheduleId') scheduleId: string,
+  ) {
+    return this.tournamentScheduleItemsService.findAll(userId, scheduleId);
   }
 
   @Patch(':id')
   update(
     @ActiveUserId() userId: string,
+    @Param('scheduleId') scheduleId: string,
     @Param('id') id: string,
     @Body() dto: UpdateTournamentScheduleItemDto,
   ) {
-    return this.tournamentScheduleItemsService.update(userId, id, dto);
+    return this.tournamentScheduleItemsService.update(userId, scheduleId, id, dto);
   }
 
   @Delete(':id')
-  remove(@ActiveUserId() userId: string, @Param('id') id: string) {
-    return this.tournamentScheduleItemsService.remove(userId, id);
+  remove(
+    @ActiveUserId() userId: string,
+    @Param('scheduleId') scheduleId: string,
+    @Param('id') id: string,
+  ) {
+    return this.tournamentScheduleItemsService.remove(userId, scheduleId, id);
   }
 }
-

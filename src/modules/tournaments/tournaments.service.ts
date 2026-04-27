@@ -118,7 +118,7 @@ export class TournamentsService {
     return created;
   }
 
-  async applySchedule(userId: string, options?: { ids?: string[] }) {
+  async applySchedule(userId: string, options?: { scheduleId?: string; ids?: string[] }) {
     const bank = await this.banksRepository.findByUserId(userId);
 
     if (!bank) {
@@ -128,6 +128,7 @@ export class TournamentsService {
     const scheduleItems = await this.tournamentScheduleItemsRepository.findMany({
       where: {
         userId,
+        ...(options?.scheduleId ? { scheduleId: options.scheduleId } : {}),
         ...(options?.ids?.length ? { id: { in: options.ids } } : {}),
       },
       orderBy: [{ time: 'asc' }, { name: 'asc' }],

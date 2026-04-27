@@ -19,8 +19,9 @@ model User {
   email    String @unique
   password String
 
-  Bank       Bank[]
-  Tournament Tournament[]
+  Bank                   Bank[]
+  Tournament             Tournament[]
+  TournamentSchedule     TournamentSchedule[]
   TournamentScheduleItem TournamentScheduleItem[]
 
   @@map("users")
@@ -99,18 +100,39 @@ model Tournament {
   @@map("tournaments")
 }
 
-model TournamentScheduleItem {
-  id       String @id @default(uuid()) @db.Uuid
-  userId   String @map("user_id") @db.Uuid
-  name     String
-  platform String
-  buyIn    Float
-  currency String
-  time     String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+enum ScheduleType {
+  WEEKLY
+  SUNDAY
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model TournamentSchedule {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  name      String
+  type      ScheduleType
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  user  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items TournamentScheduleItem[]
+
+  @@map("tournament_schedules")
+}
+
+model TournamentScheduleItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  scheduleId String   @map("schedule_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  name       String
+  platform   String
+  buyIn      Float
+  currency   String
+  time       String
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  schedule TournamentSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tournament_schedule_items")
 }

@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { TournamentScheduleItemsRepository } from 'src/database/repositories/tournament-schedule-items.repository';
+import { TournamentSchedulesRepository } from 'src/database/repositories/tournament-schedules.repository';
 import { CreateTournamentScheduleItemDto } from './dto/create-tournament-schedule-item.dto';
 import { UpdateTournamentScheduleItemDto } from './dto/update-tournament-schedule-item.dto';
 
@@ -7,12 +8,26 @@ import { UpdateTournamentScheduleItemDto } from './dto/update-tournament-schedul
 export class TournamentScheduleItemsService {
   constructor(
     private readonly tournamentScheduleItemsRepository: TournamentScheduleItemsRepository,
+    private readonly tournamentSchedulesRepository: TournamentSchedulesRepository,
   ) {}
 
-  create(userId: string, dto: CreateTournamentScheduleItemDto) {
+  async create(
+    userId: string,
+    scheduleId: string,
+    dto: CreateTournamentScheduleItemDto,
+  ) {
+    const schedule = await this.tournamentSchedulesRepository.findUnique({
+      where: { id: scheduleId },
+    });
+
+    if (!schedule || schedule.userId !== userId) {
+      throw new NotFoundException('Schedule not found');
+    }
+
     return this.tournamentScheduleItemsRepository.create({
       data: {
         userId,
+        scheduleId,
         name: dto.name,
         platform: dto.platform,
         buyIn: dto.buyIn,
@@ -22,20 +37,25 @@ export class TournamentScheduleItemsService {
     });
   }
 
-  findAll(userId: string) {
+  findAll(userId: string, scheduleId: string) {
     return this.tournamentScheduleItemsRepository.findMany({
-      where: { userId },
+      where: { userId, scheduleId },
       orderBy: [{ time: 'asc' }, { name: 'asc' }],
     });
   }
 
-  async update(userId: string, id: string, dto: UpdateTournamentScheduleItemDto) {
+  async update(
+    userId: string,
+    scheduleId: string,
+    id: string,
+    dto: UpdateTournamentScheduleItemDto,
+  ) {
     const existing = await this.tournamentScheduleItemsRepository.findUnique({
       where: { id },
     });
 
-    if (!existing || existing.userId !== userId) {
-      throw new Error('Schedule item not found');
+    if (!existing || existing.userId !== userId || existing.scheduleId !== scheduleId) {
+      throw new NotFoundException('Schedule item not found');
     }
 
     return this.tournamentScheduleItemsRepository.update({
@@ -50,18 +70,15 @@ export class TournamentScheduleItemsService {
     });
   }
 
-  async remove(userId: string, id: string) {
+  async remove(userId: string, scheduleId: string, id: string) {
     const existing = await this.tournamentScheduleItemsRepository.findUnique({
       where: { id },
     });
 
-    if (!existing || existing.userId !== userId) {
-      throw new Error('Schedule item not found');
+    if (!existing || existing.userId !== userId || existing.scheduleId !== scheduleId) {
+      throw new NotFoundException('Schedule item not found');
     }
 
-    return this.tournamentScheduleItemsRepository.delete({
-      where: { id },
-    });
+    return this.tournamentScheduleItemsRepository.delete({ where: { id } });
   }
 }
-

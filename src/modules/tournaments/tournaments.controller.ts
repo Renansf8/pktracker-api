@@ -36,8 +36,11 @@ export class TournamentsController {
   }
 
   @Post('apply-schedule')
-  applySchedule(@ActiveUserId() userId: string) {
-    return this.tournamentsService.applySchedule(userId);
+  applySchedule(
+    @ActiveUserId() userId: string,
+    @Query('scheduleId') scheduleId?: string,
+  ) {
+    return this.tournamentsService.applySchedule(userId, { scheduleId });
   }
 
   @Get()
