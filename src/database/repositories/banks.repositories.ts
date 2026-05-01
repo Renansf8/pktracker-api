@@ -88,7 +88,7 @@ export class BanksRepository {
     });
   }
 
-  async createRake(bankId: string, amount: number) {
+  async createRake(bankId: string, amount: number, platform?: string) {
     const bank = await this.validateBankExists(bankId);
 
     return this.prismaService.$transaction(async (prisma) => {
@@ -96,6 +96,7 @@ export class BanksRepository {
         data: {
           bankId,
           amount,
+          platform: platform ?? null,
           date: new Date(),
         },
       });

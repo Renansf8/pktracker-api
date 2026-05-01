@@ -37,4 +37,9 @@ export class BanksController {
   getRakeHistory(@ActiveUserId() userId: string) {
     return this.banksService.getRakeHistory(userId);
   }
+
+  @Get('me')
+  getMe(@ActiveUserId() userId: string) {
+    return this.banksService.getMe(userId);
+  }
 }

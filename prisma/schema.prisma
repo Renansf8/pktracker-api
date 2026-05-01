@@ -68,10 +68,11 @@ model Withdrawal {
 }
 
 model Rake {
-  id     String   @id @default(uuid()) @db.Uuid
-  bankId String   @map("bank_id") @db.Uuid
-  amount Float
-  date   DateTime
+  id       String   @id @default(uuid()) @db.Uuid
+  bankId   String   @map("bank_id") @db.Uuid
+  amount   Float
+  platform String?
+  date     DateTime
 
   bank Bank @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
