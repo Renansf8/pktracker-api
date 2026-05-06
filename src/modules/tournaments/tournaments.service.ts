@@ -181,7 +181,7 @@ export class TournamentsService {
     
     const queryParams: any = {
       where,
-      orderBy: { date: 'desc' },
+      orderBy: [{ date: 'desc' }, { id: 'asc' }],
     };
 
     if (skipValue > 0) {
