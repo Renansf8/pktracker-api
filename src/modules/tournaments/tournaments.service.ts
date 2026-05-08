@@ -295,6 +295,9 @@ export class TournamentsService {
           itm: updateTournamentDto.itm,
           position: updateTournamentDto.itm ? (updateTournamentDto.position ?? null) : null,
         }),
+        ...(updateTournamentDto.itm === undefined && updateTournamentDto.position !== undefined && {
+          position: updateTournamentDto.position,
+        }),
         ...(updateTournamentDto.hasFt !== undefined && {
           hasFt: updateTournamentDto.hasFt,
         }),
