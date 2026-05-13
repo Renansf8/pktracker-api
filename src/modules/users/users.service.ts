@@ -26,6 +26,10 @@ export class UsersService {
     };
   }
 
+  getAllUsers() {
+    return this.usersRepository.findMany();
+  }
+
   async createUserBank(userId: string) {
     const existingBank = await this.banksRepository.findByUserId(userId);
 

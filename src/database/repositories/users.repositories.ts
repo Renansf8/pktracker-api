@@ -13,4 +13,20 @@ export class UsersRepository {
   findUnique(findUniqueDTO: Prisma.UserFindUniqueArgs) {
     return this.prismaService.user.findUnique(findUniqueDTO);
   }
+
+  findMany() {
+    return this.prismaService.user.findMany({
+      select: {
+        name: true,
+        email: true,
+        Bank: {
+          include: {
+            deposits: { orderBy: { date: 'desc' } },
+            withdrawals: { orderBy: { date: 'desc' } },
+            rakes: { orderBy: { date: 'desc' } },
+          },
+        },
+      },
+    });
+  }
 }
