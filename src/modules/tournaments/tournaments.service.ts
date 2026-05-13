@@ -28,19 +28,19 @@ export class TournamentsService {
       createTournamentDto.result !== undefined && !resultIsTicket;
 
     const profit = buyInIsTicket
-      ? hasNumericResult ? (createTournamentDto.result as number) : 0 // paid with ticket: profit = result, or 0 if no result
+      ? hasNumericResult ? (createTournamentDto.result as number) : 0
       : resultIsTicket
-        ? -(createTournamentDto.buyIn as number) // spent buyIn, got a ticket back
+        ? -(createTournamentDto.buyIn as number)
         : hasNumericResult
           ? (createTournamentDto.result as number) - (createTournamentDto.buyIn as number)
-          : 0;
+          : -(createTournamentDto.buyIn as number);
 
     const tournament = await this.tournamentsRepository.create({
       name: createTournamentDto.name,
       platform: createTournamentDto.platform,
       buyIn: createTournamentDto.buyIn.toString(),
       currency: createTournamentDto.currency,
-      result: createTournamentDto.result !== undefined ? createTournamentDto.result.toString() : null,
+      result: createTournamentDto.result !== undefined ? createTournamentDto.result.toString() : '0',
       profit,
       itm: createTournamentDto.itm,
       hasFt: createTournamentDto.hasFt ?? false,
@@ -86,7 +86,7 @@ export class TournamentsService {
           ? -(dto.buyIn as number)
           : hasNumericResult
             ? (dto.result as number) - (dto.buyIn as number)
-            : 0;
+            : -(dto.buyIn as number);
       profitSum += profit;
 
       const tournament = await this.tournamentsRepository.create({
@@ -94,7 +94,7 @@ export class TournamentsService {
         platform: dto.platform,
         buyIn: dto.buyIn.toString(),
         currency: dto.currency,
-        result: dto.result !== undefined ? dto.result.toString() : null,
+        result: dto.result !== undefined ? dto.result.toString() : '0',
         profit,
         itm: dto.itm,
         hasFt: dto.hasFt ?? false,
@@ -140,24 +140,35 @@ export class TournamentsService {
     const day = now.getDate();
 
     const created: any[] = [];
+    let profitSum = 0;
 
     for (const item of scheduleItems) {
       const [hh, mm] = item.time.split(':').map((v) => Number(v));
       const date = new Date(year, month, day, hh || 0, mm || 0, 0, 0);
+      const buyIn = Number(item.buyIn);
+      const profit = -buyIn;
 
       const tournament = await this.tournamentsRepository.create({
         name: item.name,
         platform: item.platform,
         buyIn: item.buyIn.toString(),
         currency: item.currency,
-        result: null,
-        profit: 0,
+        result: '0',
+        profit,
         date,
         user: { connect: { id: userId } },
         bank: { connect: { id: bank.id } },
       });
 
+      profitSum += profit;
       created.push(tournament);
+    }
+
+    if (profitSum !== 0) {
+      await this.banksRepository.update(bank.id, {
+        bank: bank.bank + profitSum,
+        profit: bank.profit + profitSum,
+      });
     }
 
     return created;
