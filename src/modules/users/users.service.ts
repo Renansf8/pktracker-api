@@ -15,6 +15,7 @@ export class UsersService {
       select: {
         name: true,
         email: true,
+        createdAt: true,
       },
     });
 

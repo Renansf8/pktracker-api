@@ -19,6 +19,7 @@ export class UsersRepository {
       select: {
         name: true,
         email: true,
+        createdAt: true,
         Bank: {
           include: {
             deposits: { orderBy: { date: 'desc' } },
