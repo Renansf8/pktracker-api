@@ -29,6 +29,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  const httpAdapter = app.getHttpAdapter();
+  httpAdapter.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+
   await app.listen(port, '0.0.0.0');
 }
 bootstrap();
