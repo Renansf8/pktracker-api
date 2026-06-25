@@ -118,7 +118,7 @@ export class TournamentsService {
     return created;
   }
 
-  async applySchedule(userId: string, options?: { scheduleId?: string; ids?: string[] }) {
+  async applySchedule(userId: string, options?: { scheduleId?: string; ids?: string[]; timezoneOffset?: number }) {
     const bank = await this.banksRepository.findByUserId(userId);
 
     if (!bank) {
@@ -135,16 +135,20 @@ export class TournamentsService {
     });
 
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const day = now.getDate();
+    const year = now.getUTCFullYear();
+    const month = now.getUTCMonth();
+    const day = now.getUTCDate();
+    const offsetMinutes = options?.timezoneOffset ?? 0;
 
     const created: any[] = [];
     let profitSum = 0;
 
     for (const item of scheduleItems) {
       const [hh, mm] = item.time.split(':').map((v) => Number(v));
-      const date = new Date(year, month, day, hh || 0, mm || 0, 0, 0);
+      // Build date in UTC then shift by client offset so the stored UTC value
+      // reflects the correct local time (e.g. 19:00 UTC-3 → stored as 22:00 UTC).
+      const date = new Date(Date.UTC(year, month, day, hh || 0, mm || 0, 0, 0));
+      date.setUTCMinutes(date.getUTCMinutes() + offsetMinutes);
       const buyIn = Number(item.buyIn);
       const profit = -buyIn;
 
