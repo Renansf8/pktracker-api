@@ -1,5 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 import { CreateTournamentScheduleItemDto } from './dto/create-tournament-schedule-item.dto';
 import { UpdateTournamentScheduleItemDto } from './dto/update-tournament-schedule-item.dto';
@@ -44,7 +57,12 @@ export class TournamentScheduleItemsController {
     @Param('id') id: string,
     @Body() dto: UpdateTournamentScheduleItemDto,
   ) {
-    return this.tournamentScheduleItemsService.update(userId, scheduleId, id, dto);
+    return this.tournamentScheduleItemsService.update(
+      userId,
+      scheduleId,
+      id,
+      dto,
+    );
   }
 
   @Delete(':id')

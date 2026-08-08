@@ -28,11 +28,14 @@ export class TournamentsService {
       createTournamentDto.result !== undefined && !resultIsTicket;
 
     const profit = buyInIsTicket
-      ? hasNumericResult ? (createTournamentDto.result as number) : 0
+      ? hasNumericResult
+        ? (createTournamentDto.result as number)
+        : 0
       : resultIsTicket
         ? -(createTournamentDto.buyIn as number)
         : hasNumericResult
-          ? (createTournamentDto.result as number) - (createTournamentDto.buyIn as number)
+          ? (createTournamentDto.result as number) -
+            (createTournamentDto.buyIn as number)
           : -(createTournamentDto.buyIn as number);
 
     const tournament = await this.tournamentsRepository.create({
@@ -40,12 +43,17 @@ export class TournamentsService {
       platform: createTournamentDto.platform,
       buyIn: createTournamentDto.buyIn.toString(),
       currency: createTournamentDto.currency,
-      result: createTournamentDto.result !== undefined ? createTournamentDto.result.toString() : '0',
+      result:
+        createTournamentDto.result !== undefined
+          ? createTournamentDto.result.toString()
+          : '0',
       profit,
       itm: createTournamentDto.itm,
       hasFt: createTournamentDto.hasFt ?? false,
       hasSecondDay: createTournamentDto.hasSecondDay ?? false,
-      position: createTournamentDto.itm ? (createTournamentDto.position ?? null) : null,
+      position: createTournamentDto.itm
+        ? (createTournamentDto.position ?? null)
+        : null,
       date: new Date(createTournamentDto.date),
       user: {
         connect: { id: userId },
@@ -81,7 +89,9 @@ export class TournamentsService {
       const hasNumericResult = dto.result !== undefined && !resultIsTicket;
 
       const profit = buyInIsTicket
-        ? hasNumericResult ? (dto.result as number) : 0
+        ? hasNumericResult
+          ? (dto.result as number)
+          : 0
         : resultIsTicket
           ? -(dto.buyIn as number)
           : hasNumericResult
@@ -118,21 +128,26 @@ export class TournamentsService {
     return created;
   }
 
-  async applySchedule(userId: string, options?: { scheduleId?: string; ids?: string[]; timezoneOffset?: number }) {
+  async applySchedule(
+    userId: string,
+    options?: { scheduleId?: string; ids?: string[]; timezoneOffset?: number },
+  ) {
     const bank = await this.banksRepository.findByUserId(userId);
 
     if (!bank) {
       throw new Error('Bank not found for this user');
     }
 
-    const scheduleItems = await this.tournamentScheduleItemsRepository.findMany({
-      where: {
-        userId,
-        ...(options?.scheduleId ? { scheduleId: options.scheduleId } : {}),
-        ...(options?.ids?.length ? { id: { in: options.ids } } : {}),
+    const scheduleItems = await this.tournamentScheduleItemsRepository.findMany(
+      {
+        where: {
+          userId,
+          ...(options?.scheduleId ? { scheduleId: options.scheduleId } : {}),
+          ...(options?.ids?.length ? { id: { in: options.ids } } : {}),
+        },
+        orderBy: [{ time: 'asc' }, { name: 'asc' }],
       },
-      orderBy: [{ time: 'asc' }, { name: 'asc' }],
-    });
+    );
 
     const now = new Date();
     const year = now.getUTCFullYear();
@@ -193,7 +208,7 @@ export class TournamentsService {
 
     const skipValue = Number.isNaN(skip) || skip < 0 ? 0 : skip;
     const takeValue = Number.isNaN(limit) || limit <= 0 ? 10 : limit;
-    
+
     const queryParams: any = {
       where,
       orderBy: [{ date: 'desc' }, { id: 'asc' }],
@@ -202,11 +217,10 @@ export class TournamentsService {
     if (skipValue > 0) {
       queryParams.skip = skipValue;
     }
-    
+
     if (takeValue > 0) {
       queryParams.take = takeValue;
     }
-
 
     const [data, total, aggregate] = await Promise.all([
       this.tournamentsRepository.findMany(queryParams),
@@ -277,7 +291,9 @@ export class TournamentsService {
     const nextResultIsTicket = nextResult === 'ticket';
 
     const nextProfit = nextBuyInIsTicket
-      ? nextResult !== undefined && !nextResultIsTicket ? (nextResult as number) : 0
+      ? nextResult !== undefined && !nextResultIsTicket
+        ? (nextResult as number)
+        : 0
       : nextResultIsTicket
         ? -(nextBuyIn as number)
         : nextResult === undefined
@@ -308,11 +324,14 @@ export class TournamentsService {
         }),
         ...(updateTournamentDto.itm !== undefined && {
           itm: updateTournamentDto.itm,
-          position: updateTournamentDto.itm ? (updateTournamentDto.position ?? null) : null,
+          position: updateTournamentDto.itm
+            ? (updateTournamentDto.position ?? null)
+            : null,
         }),
-        ...(updateTournamentDto.itm === undefined && updateTournamentDto.position !== undefined && {
-          position: updateTournamentDto.position,
-        }),
+        ...(updateTournamentDto.itm === undefined &&
+          updateTournamentDto.position !== undefined && {
+            position: updateTournamentDto.position,
+          }),
         ...(updateTournamentDto.hasFt !== undefined && {
           hasFt: updateTournamentDto.hasFt,
         }),

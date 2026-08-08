@@ -4,4 +4,3 @@ import { CreateTournamentScheduleItemDto } from './create-tournament-schedule-it
 export class UpdateTournamentScheduleItemDto extends PartialType(
   CreateTournamentScheduleItemDto,
 ) {}
-

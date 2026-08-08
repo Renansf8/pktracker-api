@@ -28,11 +28,21 @@ export class StatsRepository {
    * Returns the tournament with the largest buy-in for a given user, or null
    * if the user has no tournaments yet.
    */
-  async findBiggestBuyInTournament(
-    userId: string,
-  ): Promise<{ id: string; name: string; platform: string; date: Date; buyIn: string } | null> {
+  async findBiggestBuyInTournament(userId: string): Promise<{
+    id: string;
+    name: string;
+    platform: string;
+    date: Date;
+    buyIn: string;
+  } | null> {
     const rows = await this.prismaService.$queryRawUnsafe<
-      { id: string; name: string; platform: string; date: Date; buyIn: string }[]
+      {
+        id: string;
+        name: string;
+        platform: string;
+        date: Date;
+        buyIn: string;
+      }[]
     >(
       `
         SELECT id, name, platform, date, "buyIn"
@@ -72,7 +82,9 @@ export class StatsRepository {
 
     const order = direction === 'highest' ? 'DESC' : 'ASC';
     const havingClause =
-      direction === 'highest' ? 'HAVING SUM(profit) > 0' : 'HAVING SUM(profit) < 0';
+      direction === 'highest'
+        ? 'HAVING SUM(profit) > 0'
+        : 'HAVING SUM(profit) < 0';
 
     const sql = `
       SELECT date_trunc('${unit}', date) AS bucket,

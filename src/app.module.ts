@@ -10,7 +10,14 @@ import { BanksModule } from './modules/banks/banks.module';
 import { StatsModule } from './modules/stats/stats.module';
 
 @Module({
-  imports: [UsersModule, AuthModule, DatabaseModule, TournamentsModule, BanksModule, StatsModule],
+  imports: [
+    UsersModule,
+    AuthModule,
+    DatabaseModule,
+    TournamentsModule,
+    BanksModule,
+    StatsModule,
+  ],
   controllers: [],
   providers: [
     {

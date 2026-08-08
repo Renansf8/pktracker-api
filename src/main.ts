@@ -30,7 +30,9 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document);
 
   const httpAdapter = app.getHttpAdapter();
-  httpAdapter.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+  httpAdapter.get('/health', (_req, res) =>
+    res.status(200).json({ status: 'ok' }),
+  );
 
   await app.listen(port, '0.0.0.0');
 }

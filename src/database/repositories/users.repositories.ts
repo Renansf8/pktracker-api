@@ -30,4 +30,35 @@ export class UsersRepository {
       },
     });
   }
+
+  setResetToken(
+    userId: string,
+    resetTokenHash: string,
+    resetTokenExpiresAt: Date,
+  ) {
+    return this.prismaService.user.update({
+      where: { id: userId },
+      data: { resetTokenHash, resetTokenExpiresAt },
+    });
+  }
+
+  findByValidResetTokenHash(resetTokenHash: string) {
+    return this.prismaService.user.findFirst({
+      where: {
+        resetTokenHash,
+        resetTokenExpiresAt: { gt: new Date() },
+      },
+    });
+  }
+
+  resetPassword(userId: string, hashedPassword: string) {
+    return this.prismaService.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        resetTokenHash: null,
+        resetTokenExpiresAt: null,
+      },
+    });
+  }
 }

@@ -1,5 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ScheduleType } from '@prisma/client';
 import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 import { CreateTournamentScheduleDto } from './dto/create-tournament-schedule.dto';
@@ -28,10 +43,7 @@ export class TournamentSchedulesController {
   @ApiOperation({ summary: 'List tournament schedules' })
   @ApiQuery({ name: 'type', enum: ScheduleType, required: false })
   @ApiResponse({ status: 200, description: 'List of schedules' })
-  findAll(
-    @ActiveUserId() userId: string,
-    @Query('type') type?: ScheduleType,
-  ) {
+  findAll(@ActiveUserId() userId: string, @Query('type') type?: ScheduleType) {
     return this.tournamentSchedulesService.findAll(userId, type);
   }
 

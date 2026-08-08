@@ -8,7 +8,13 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { TournamentsService } from './tournaments.service';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
@@ -45,7 +51,11 @@ export class TournamentsController {
   @Post('apply-schedule')
   @ApiOperation({ summary: 'Apply a schedule to create tournaments' })
   @ApiQuery({ name: 'scheduleId', required: false })
-  @ApiQuery({ name: 'timezoneOffset', required: false, description: 'Client timezone offset in minutes (e.g. 180 for UTC-3)' })
+  @ApiQuery({
+    name: 'timezoneOffset',
+    required: false,
+    description: 'Client timezone offset in minutes (e.g. 180 for UTC-3)',
+  })
   @ApiResponse({ status: 201, description: 'Schedule applied successfully' })
   applySchedule(
     @ActiveUserId() userId: string,

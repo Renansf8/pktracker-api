@@ -22,12 +22,30 @@ class Env {
   @IsOptional()
   @IsString()
   allowedEmails?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  resendApiKey: string;
+
+  /** Sender address for transactional emails. Must be on a domain verified in Resend
+   *  (or the sandbox address `onboarding@resend.dev`, which can only email the account owner). */
+  @IsString()
+  @IsNotEmpty()
+  resendFromEmail: string;
+
+  /** Base URL of the frontend app; used to build the password reset link. */
+  @IsString()
+  @IsNotEmpty()
+  frontendUrl: string;
 }
 
 export const env: Env = plainToInstance(Env, {
   dbURL: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET,
   allowedEmails: process.env.ALLOWED_EMAILS,
+  resendApiKey: process.env.RESEND_API_KEY,
+  resendFromEmail: process.env.RESEND_FROM_EMAIL,
+  frontendUrl: process.env.FRONTEND_URL,
 });
 
 const errors = validateSync(env);

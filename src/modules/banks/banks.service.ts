@@ -48,7 +48,11 @@ export class BanksService {
 
   async createRake(userId: string, createRakeDto: CreateRakeDto) {
     const bank = await this.validateAndGetBank(userId);
-    return this.banksRepository.createRake(bank.id, createRakeDto.amount, createRakeDto.platform);
+    return this.banksRepository.createRake(
+      bank.id,
+      createRakeDto.amount,
+      createRakeDto.platform,
+    );
   }
 
   async getRakeHistory(userId: string) {

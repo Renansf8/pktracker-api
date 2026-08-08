@@ -26,4 +26,3 @@ export class TournamentScheduleItemsRepository {
     return this.prismaService.tournamentScheduleItem.delete(deleteDto);
   }
 }
-

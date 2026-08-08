@@ -54,7 +54,11 @@ export class TournamentScheduleItemsService {
       where: { id },
     });
 
-    if (!existing || existing.userId !== userId || existing.scheduleId !== scheduleId) {
+    if (
+      !existing ||
+      existing.userId !== userId ||
+      existing.scheduleId !== scheduleId
+    ) {
       throw new NotFoundException('Schedule item not found');
     }
 
@@ -75,7 +79,11 @@ export class TournamentScheduleItemsService {
       where: { id },
     });
 
-    if (!existing || existing.userId !== userId || existing.scheduleId !== scheduleId) {
+    if (
+      !existing ||
+      existing.userId !== userId ||
+      existing.scheduleId !== scheduleId
+    ) {
       throw new NotFoundException('Schedule item not found');
     }
 

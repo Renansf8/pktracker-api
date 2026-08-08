@@ -30,7 +30,10 @@ export class CreateTournamentDto {
   @IsNotEmpty()
   currency: string;
 
-  @ApiPropertyOptional({ example: 150, description: 'Result amount or "ticket"' })
+  @ApiPropertyOptional({
+    example: 150,
+    description: 'Result amount or "ticket"',
+  })
   @IsOptional()
   @IsNumberOrTicket()
   result?: number | 'ticket';
