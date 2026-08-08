@@ -51,7 +51,10 @@ export const env: Env = plainToInstance(Env, {
 const errors = validateSync(env);
 
 if (errors.length > 0) {
-  throw new Error(JSON.stringify(errors, null, 2));
+  const invalidFields = errors.map((error) => error.property).join(', ');
+  throw new Error(
+    `Invalid or missing environment variables: ${invalidFields}`,
+  );
 }
 
 /**
