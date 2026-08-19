@@ -1,7 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TournamentSpeed, TournamentType } from '@prisma/client';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -57,6 +59,16 @@ export class CreateTournamentDto {
   @IsNumber()
   @IsOptional()
   position?: number;
+
+  @ApiPropertyOptional({ enum: TournamentType, example: TournamentType.VANILLA })
+  @IsOptional()
+  @IsEnum(TournamentType)
+  type?: TournamentType;
+
+  @ApiPropertyOptional({ enum: TournamentSpeed, example: TournamentSpeed.REGULAR })
+  @IsOptional()
+  @IsEnum(TournamentSpeed)
+  speed?: TournamentSpeed;
 
   @ApiProperty({ example: '2025-05-13T20:00:00.000Z' })
   @IsDateString()

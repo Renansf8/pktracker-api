@@ -54,6 +54,8 @@ export class TournamentsService {
       position: createTournamentDto.itm
         ? (createTournamentDto.position ?? null)
         : null,
+      type: createTournamentDto.type ?? null,
+      speed: createTournamentDto.speed ?? null,
       date: new Date(createTournamentDto.date),
       user: {
         connect: { id: userId },
@@ -110,6 +112,8 @@ export class TournamentsService {
         hasFt: dto.hasFt ?? false,
         hasSecondDay: dto.hasSecondDay ?? false,
         position: dto.itm ? (dto.position ?? null) : null,
+        type: dto.type ?? null,
+        speed: dto.speed ?? null,
         date: new Date(dto.date),
         user: { connect: { id: userId } },
         bank: { connect: { id: bank.id } },
@@ -204,7 +208,16 @@ export class TournamentsService {
       ...(filters?.name && {
         name: { contains: filters.name, mode: Prisma.QueryMode.insensitive },
       }),
+      ...(filters?.type && { type: filters.type }),
+      ...(filters?.speed && { speed: filters.speed }),
     };
+
+    const hasValueFilter =
+      filters?.minBuyIn !== undefined || filters?.maxBuyIn !== undefined;
+
+    if (hasValueFilter) {
+      return this.findAllWithValueFilter(where, filters, page, limit);
+    }
 
     const skipValue = Number.isNaN(skip) || skip < 0 ? 0 : skip;
     const takeValue = Number.isNaN(limit) || limit <= 0 ? 10 : limit;
@@ -233,6 +246,64 @@ export class TournamentsService {
 
     const totalPages = Math.ceil(total / limit);
     const totalProfit = aggregate._sum.profit ?? 0;
+
+    return {
+      data,
+      totalPages,
+      total,
+      totalProfit,
+    };
+  }
+
+  // buyIn is stored as a String (it can hold a numeric value or the literal
+  // "ticket"), so range filtering can't rely on Prisma's numeric gte/lte
+  // operators. When a min/max buy-in filter is present we fetch all rows
+  // matching the other filters, filter/paginate in memory instead.
+  private async findAllWithValueFilter(
+    where: any,
+    filters: FilterTournamentsDto,
+    page: number,
+    limit: number,
+  ) {
+    const allData = await this.tournamentsRepository.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { id: 'asc' }],
+    });
+
+    const minBuyIn = filters.minBuyIn;
+    const maxBuyIn = filters.maxBuyIn;
+
+    const filtered = (allData as any[]).filter((tournament) => {
+      if (tournament.buyIn === 'ticket') {
+        return false;
+      }
+
+      const buyInValue = parseFloat(tournament.buyIn);
+
+      if (Number.isNaN(buyInValue)) {
+        return false;
+      }
+
+      if (minBuyIn !== undefined && buyInValue < minBuyIn) {
+        return false;
+      }
+
+      if (maxBuyIn !== undefined && buyInValue > maxBuyIn) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const totalProfit = filtered.reduce(
+      (sum, tournament) => sum + (tournament.profit ?? 0),
+      0,
+    );
+
+    const skip = (page - 1) * limit;
+    const data = filtered.slice(skip, skip + limit);
 
     return {
       data,
@@ -337,6 +408,12 @@ export class TournamentsService {
         }),
         ...(updateTournamentDto.hasSecondDay !== undefined && {
           hasSecondDay: updateTournamentDto.hasSecondDay,
+        }),
+        ...(updateTournamentDto.type !== undefined && {
+          type: updateTournamentDto.type,
+        }),
+        ...(updateTournamentDto.speed !== undefined && {
+          speed: updateTournamentDto.speed,
         }),
         ...(updateTournamentDto.buyIn !== undefined ||
         updateTournamentDto.result !== undefined

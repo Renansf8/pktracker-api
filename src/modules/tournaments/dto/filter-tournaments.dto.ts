@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { TournamentSpeed, TournamentType } from '@prisma/client';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  IsEnum,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class FilterTournamentsDto {
@@ -12,6 +20,28 @@ export class FilterTournamentsDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiPropertyOptional({ enum: TournamentType })
+  @IsOptional()
+  @IsEnum(TournamentType)
+  type?: TournamentType;
+
+  @ApiPropertyOptional({ enum: TournamentSpeed })
+  @IsOptional()
+  @IsEnum(TournamentSpeed)
+  speed?: TournamentSpeed;
+
+  @ApiPropertyOptional({ example: 10, description: 'Minimum buy-in value' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  minBuyIn?: number;
+
+  @ApiPropertyOptional({ example: 500, description: 'Maximum buy-in value' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  maxBuyIn?: number;
 
   @ApiPropertyOptional({ example: 1, minimum: 1 })
   @IsOptional()

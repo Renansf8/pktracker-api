@@ -96,12 +96,25 @@ model Tournament {
   hasFt         Boolean  @default(false) @map("has_ft")
   hasSecondDay  Boolean  @default(false) @map("has_second_day")
   position      Int?
+  type          TournamentType?
+  speed         TournamentSpeed?
   date     DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   bank Bank @relation(fields: [bankId], references: [id], onDelete: Cascade)
 
   @@map("tournaments")
+}
+
+enum TournamentType {
+  BOUNTY
+  VANILLA
+}
+
+enum TournamentSpeed {
+  REGULAR
+  TURBO
+  HYPER
 }
 
 enum ScheduleType {
