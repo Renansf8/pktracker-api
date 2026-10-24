@@ -37,6 +37,17 @@ class Env {
   @IsString()
   @IsNotEmpty()
   frontendUrl: string;
+
+  /** Claude API key for generated dashboards. Optional: without it the
+   *  /genui routes answer 503 and the rest of the API works normally. */
+  @IsOptional()
+  @IsString()
+  anthropicApiKey?: string;
+
+  /** Model used for generated dashboards. */
+  @IsString()
+  @IsNotEmpty()
+  genuiModel: string;
 }
 
 export const env: Env = plainToInstance(Env, {
@@ -46,15 +57,15 @@ export const env: Env = plainToInstance(Env, {
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromEmail: process.env.RESEND_FROM_EMAIL,
   frontendUrl: process.env.FRONTEND_URL,
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY || undefined,
+  genuiModel: process.env.GENUI_MODEL || 'claude-haiku-5-5',
 });
 
 const errors = validateSync(env);
 
 if (errors.length > 0) {
   const invalidFields = errors.map((error) => error.property).join(', ');
-  throw new Error(
-    `Invalid or missing environment variables: ${invalidFields}`,
-  );
+  throw new Error(`Invalid or missing environment variables: ${invalidFields}`);
 }
 
 /**

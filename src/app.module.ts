@@ -8,6 +8,7 @@ import { AuthGuard } from './modules/auth/auth.guard';
 import { TournamentsModule } from './modules/tournaments/tournaments.module';
 import { BanksModule } from './modules/banks/banks.module';
 import { StatsModule } from './modules/stats/stats.module';
+import { GenUiModule } from './modules/genui/genui.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StatsModule } from './modules/stats/stats.module';
     TournamentsModule,
     BanksModule,
     StatsModule,
+    GenUiModule,
   ],
   controllers: [],
   providers: [

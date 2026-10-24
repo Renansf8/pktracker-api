@@ -23,6 +23,13 @@ DATABASE_URL=postgresql://...
 JWT_SECRET=<a secure string — must not be "unsecure_jwt_secret">
 ```
 
+Optional, for generated dashboards (`/genui`):
+
+```
+ANTHROPIC_API_KEY=sk-ant-...      # without it, /genui answers 503 and everything else works
+GENUI_MODEL=claude-haiku-5-5      # default
+```
+
 ## Running the project
 
 ```bash
@@ -85,6 +92,7 @@ All endpoints except `/auth/*` require a `Bearer <token>` JWT header.
 | POST | `/tournaments` | Log a tournament result |
 | GET | `/tournaments` | List tournaments (optional `?platform=` filter, ordered by date desc) |
 | DELETE | `/tournaments/:id` | Delete a tournament and reverse its effect on the bank |
+| POST | `/genui/dashboard` | `{ prompt }` → Claude picks widgets from a fixed catalog (`genui.schema.ts`); returns `{ spec, data }`. 30/day per user (in memory) |
 
 ## Domain logic notes
 
