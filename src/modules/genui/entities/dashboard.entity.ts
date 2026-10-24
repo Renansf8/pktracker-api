@@ -32,7 +32,13 @@ export interface GroupStatsRow {
   profit: number;
   roi: number | null;
   itmRate: number | null;
+  ftRate: number | null;
+  day2Rate: number | null;
+  wins: number;
+  podiums: number;
   abi: number | null;
+  avgProfit: number | null;
+  biggestCash: number | null;
 }
 
 export interface TableData {
@@ -40,7 +46,33 @@ export interface TableData {
   rows: GroupStatsRow[];
 }
 
-export type WidgetData = StatData | LineChartData | BarChartData | TableData;
+export interface TournamentListItem {
+  /** YYYY-MM-DD */
+  date: string;
+  name: string;
+  platform: string;
+  currency: string;
+  /** null when paid with a ticket. */
+  buyIn: number | null;
+  /** null when nothing was won; 'ticket' when the prize was a ticket. */
+  prize: number | 'ticket' | null;
+  profit: number;
+  position: number | null;
+  itm: boolean;
+  hasFt: boolean;
+}
+
+export interface TournamentListData {
+  type: 'tournament_list';
+  rows: TournamentListItem[];
+}
+
+export type WidgetData =
+  | StatData
+  | LineChartData
+  | BarChartData
+  | TableData
+  | TournamentListData;
 
 export interface GeneratedDashboard {
   spec: DashboardSpecType;

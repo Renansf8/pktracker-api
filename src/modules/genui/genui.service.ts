@@ -43,7 +43,11 @@ const DAILY_LIMIT = 30;
 const MAX_LINE_POINTS = 120;
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Rows/bars when the model doesn't set a limit, and the hard cap. */
-const DEFAULT_LIMIT = { bar_chart: 15, table: 50 } as const;
+const DEFAULT_LIMIT = {
+  bar_chart: 15,
+  table: 50,
+  tournament_list: 10,
+} as const;
 const MAX_LIMIT = 100;
 const TABLE_SORT_FIELDS: Record<TableSortByType, keyof GroupStatsRow> = {
   profit: 'profit',
@@ -51,6 +55,7 @@ const TABLE_SORT_FIELDS: Record<TableSortByType, keyof GroupStatsRow> = {
   tournaments: 'tournaments',
   buy_ins: 'buyIns',
   itm_rate: 'itmRate',
+  ft_rate: 'ftRate',
   abi: 'abi',
 };
 const BUCKET_DAYS: Record<BucketType, number> = { day: 1, week: 7, month: 30 };
@@ -65,9 +70,16 @@ const UNITS: Record<string, ValueUnit> = {
   profit: 'money',
   cumulative_profit: 'money',
   abi: 'money',
+  avg_profit: 'money',
+  biggest_cash: 'money',
+  total_invested: 'money',
   roi: 'percent',
   itm_rate: 'percent',
+  ft_rate: 'percent',
+  day2_rate: 'percent',
   tournament_count: 'count',
+  wins: 'count',
+  podiums: 'count',
 };
 
 @Injectable()
@@ -222,7 +234,11 @@ export class GenUiService {
       if (normalized.type === 'line_chart') {
         normalized.bucket = fitBucket(normalized.bucket, period);
       }
-      if (normalized.type === 'bar_chart' || normalized.type === 'table') {
+      if (
+        normalized.type === 'bar_chart' ||
+        normalized.type === 'table' ||
+        normalized.type === 'tournament_list'
+      ) {
         normalized.limit = clampLimit(
           normalized.limit,
           DEFAULT_LIMIT[normalized.type],
@@ -308,6 +324,23 @@ export class GenUiService {
           widget.order,
         ).slice(0, widget.limit);
         return { type: 'table', rows: sorted };
+      }
+      case 'tournament_list': {
+        const rows = await this.insightsRepository.listTournaments(
+          userId,
+          filter,
+          widget.sortBy,
+          widget.order,
+          widget.limit,
+        );
+        return {
+          type: 'tournament_list',
+          rows: rows.map((row) => ({
+            ...row,
+            date: toIsoDate(row.date),
+            profit: round(row.profit),
+          })),
+        };
       }
     }
   }
@@ -439,9 +472,16 @@ export function toGroupStats(row: AggregateRow | undefined): GroupStatsRow {
       profit: 0,
       roi: null,
       itmRate: null,
+      ftRate: null,
+      day2Rate: null,
+      wins: 0,
+      podiums: 0,
       abi: null,
+      avgProfit: null,
+      biggestCash: null,
     };
   }
+  const rate = (count: number) => round((count / row.tournaments) * 100);
   return {
     label: row.key ?? 'Total',
     entry: row.entry ?? null,
@@ -452,8 +492,14 @@ export function toGroupStats(row: AggregateRow | undefined): GroupStatsRow {
       row.buyInTotal > 0
         ? round((row.profitTotal / row.buyInTotal) * 100)
         : null,
-    itmRate: round((row.itmCount / row.tournaments) * 100),
+    itmRate: rate(row.itmCount),
+    ftRate: rate(row.ftCount),
+    day2Rate: rate(row.day2Count),
+    wins: row.winCount,
+    podiums: row.podiumCount,
     abi: row.buyInCount > 0 ? round(row.buyInTotal / row.buyInCount) : null,
+    avgProfit: round(row.profitTotal / row.tournaments),
+    biggestCash: row.biggestCash === null ? null : round(row.biggestCash),
   };
 }
 
@@ -466,10 +512,24 @@ function pickMetric(stats: GroupStatsRow, metric: string): number | null {
       return stats.roi;
     case 'itm_rate':
       return stats.itmRate;
+    case 'ft_rate':
+      return stats.ftRate;
+    case 'day2_rate':
+      return stats.day2Rate;
     case 'tournament_count':
       return stats.tournaments;
+    case 'wins':
+      return stats.wins;
+    case 'podiums':
+      return stats.podiums;
     case 'abi':
       return stats.abi;
+    case 'avg_profit':
+      return stats.avgProfit;
+    case 'biggest_cash':
+      return stats.biggestCash;
+    case 'total_invested':
+      return stats.buyIns;
     default:
       return null;
   }

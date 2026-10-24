@@ -15,13 +15,22 @@ const Period = z.object({
   to: z.string().describe('Data final inclusiva, formato YYYY-MM-DD'),
 });
 
-export const StatMetric = z.enum([
-  'total_profit',
+// Metrics computed from the per-group sums (see toGroupStats).
+const GROUP_METRICS = [
   'roi',
   'itm_rate',
+  'ft_rate',
+  'day2_rate',
   'tournament_count',
+  'wins',
+  'podiums',
   'abi',
-]);
+  'avg_profit',
+  'biggest_cash',
+  'total_invested',
+] as const;
+
+export const StatMetric = z.enum(['total_profit', ...GROUP_METRICS]);
 
 export const LineMetric = z.enum([
   'cumulative_profit',
@@ -29,15 +38,14 @@ export const LineMetric = z.enum([
   'tournament_count',
 ]);
 
-export const BarMetric = z.enum([
-  'profit',
-  'roi',
-  'itm_rate',
-  'tournament_count',
-  'abi',
-]);
+export const BarMetric = z.enum(['profit', ...GROUP_METRICS]);
 
-const GroupBy = z.enum(['platform', 'currency', 'tournament_name']);
+const GroupBy = z.enum([
+  'platform',
+  'currency',
+  'tournament_name',
+  'buy_in_range',
+]);
 const Bucket = z.enum(['day', 'week', 'month']);
 const Order = z.enum(['desc', 'asc']);
 export const TableSortBy = z.enum([
@@ -46,8 +54,10 @@ export const TableSortBy = z.enum([
   'tournaments',
   'buy_ins',
   'itm_rate',
+  'ft_rate',
   'abi',
 ]);
+export const TournamentListSort = z.enum(['profit', 'prize', 'buy_in', 'date']);
 
 // Required-but-nullable instead of optional: every widget states its filter.
 const PlatformFilter = z
@@ -98,11 +108,22 @@ const TableWidget = z.object({
   platform: PlatformFilter,
 });
 
+const TournamentListWidget = z.object({
+  type: z.literal('tournament_list'),
+  title: z.string(),
+  sortBy: TournamentListSort,
+  order: Order,
+  limit: Limit,
+  period: Period,
+  platform: PlatformFilter,
+});
+
 export const Widget = z.discriminatedUnion('type', [
   StatWidget,
   LineChartWidget,
   BarChartWidget,
   TableWidget,
+  TournamentListWidget,
 ]);
 
 export const DashboardSpec = z.object({
@@ -119,6 +140,7 @@ export type DashboardSpecType = z.infer<typeof DashboardSpec>;
 export type GroupByType = z.infer<typeof GroupBy>;
 export type BucketType = z.infer<typeof Bucket>;
 export type TableSortByType = z.infer<typeof TableSortBy>;
+export type TournamentListSortType = z.infer<typeof TournamentListSort>;
 
 /**
  * JSON schema sent as the structured-output format. Built here instead of

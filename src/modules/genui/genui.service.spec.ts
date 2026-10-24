@@ -48,6 +48,7 @@ function setup() {
     getUserContext: jest.fn().mockResolvedValue(context),
     aggregate: jest.fn(),
     aggregateByBucket: jest.fn(),
+    listTournaments: jest.fn(),
   };
   const service = new GenUiService(
     client,
@@ -293,6 +294,160 @@ describe('GenUiService', () => {
     });
   });
 
+  it('computes the new per-group metrics', async () => {
+    const { service, create, repository } = setup();
+    const stat = (metric: string) => ({
+      type: 'stat',
+      title: metric,
+      metric,
+      period: { from: '2026-01-10', to: '2026-10-15' },
+      platform: null,
+    });
+    const metrics = [
+      'ft_rate',
+      'day2_rate',
+      'wins',
+      'podiums',
+      'avg_profit',
+      'biggest_cash',
+      'total_invested',
+    ];
+    create.mockResolvedValue(
+      modelReply({
+        title: 't',
+        summary: 's',
+        widgets: metrics.slice(0, 6).map(stat),
+      }),
+    );
+    repository.aggregate.mockResolvedValue([
+      {
+        key: null,
+        entry: null,
+        tournaments: 8,
+        buyInTotal: 80,
+        buyInCount: 8,
+        profitTotal: 100,
+        itmCount: 2,
+        ftCount: 2,
+        winCount: 1,
+        podiumCount: 3,
+        day2Count: 1,
+        biggestCash: 150,
+      },
+    ]);
+
+    const result = await service.generateDashboard('u1', 'x');
+
+    expect(result.data).toEqual([
+      { type: 'stat', unit: 'percent', value: 25 },
+      { type: 'stat', unit: 'percent', value: 12.5 },
+      { type: 'stat', unit: 'count', value: 1 },
+      { type: 'stat', unit: 'count', value: 3 },
+      { type: 'stat', unit: 'money', value: 12.5 },
+      { type: 'stat', unit: 'money', value: 150 },
+    ]);
+
+    create.mockResolvedValue(
+      modelReply({
+        title: 't',
+        summary: 's',
+        widgets: [stat('total_invested')],
+      }),
+    );
+    const invested = await service.generateDashboard('u1', 'x');
+    expect(invested.data[0]).toEqual({
+      type: 'stat',
+      unit: 'money',
+      value: 80,
+    });
+  });
+
+  it('groups by buy-in range', async () => {
+    const { service, create, repository } = setup();
+    create.mockResolvedValue(
+      modelReply({
+        title: 't',
+        summary: 's',
+        widgets: [
+          {
+            type: 'bar_chart',
+            title: 'ROI por faixa',
+            metric: 'roi',
+            groupBy: 'buy_in_range',
+            order: 'desc',
+            limit: null,
+            period: { from: '2026-01-10', to: '2026-10-15' },
+            platform: null,
+          },
+        ],
+      }),
+    );
+    repository.aggregate.mockResolvedValue([]);
+
+    await service.generateDashboard('u1', 'x');
+
+    expect(repository.aggregate.mock.calls[0][2]).toBe('buy_in_range');
+  });
+
+  it('lists individual tournaments with the default limit', async () => {
+    const { service, create, repository } = setup();
+    create.mockResolvedValue(
+      modelReply({
+        title: 'Maiores prêmios',
+        summary: 's',
+        widgets: [
+          {
+            type: 'tournament_list',
+            title: 'Top prêmios',
+            sortBy: 'prize',
+            order: 'desc',
+            limit: null,
+            period: { from: '2026-01-10', to: '2026-10-15' },
+            platform: 'gg',
+          },
+        ],
+      }),
+    );
+    repository.listTournaments.mockResolvedValue([
+      {
+        date: new Date('2026-05-08T21:30:00Z'),
+        name: 'Bounty Hunters',
+        platform: 'GG',
+        currency: 'USD',
+        buyIn: 5.5,
+        prize: 800,
+        profit: 794.499,
+        position: 32,
+        itm: true,
+        hasFt: false,
+      },
+    ]);
+
+    const result = await service.generateDashboard('u1', 'x');
+
+    const [, filter, sortBy, order, limit] =
+      repository.listTournaments.mock.calls[0];
+    expect(filter.platform).toBe('GG');
+    expect([sortBy, order, limit]).toEqual(['prize', 'desc', 10]);
+    expect(result.data[0]).toEqual({
+      type: 'tournament_list',
+      rows: [
+        {
+          date: '2026-05-08',
+          name: 'Bounty Hunters',
+          platform: 'GG',
+          currency: 'USD',
+          buyIn: 5.5,
+          prize: 800,
+          profit: 794.5,
+          position: 32,
+          itm: true,
+          hasFt: false,
+        },
+      ],
+    });
+  });
+
   it('sorts ascending with empty values last', async () => {
     const { service, create, repository } = setup();
     create.mockResolvedValue(
@@ -506,8 +661,10 @@ describe('GenUiService', () => {
     expect(serialized).not.toContain('$ref');
     expect(serialized).not.toContain('"type":[');
     expect(serialized).toContain(
-      '"enum":["platform","currency","tournament_name"]',
+      '"enum":["platform","currency","tournament_name","buy_in_range"]',
     );
     expect(serialized).toContain('"const":"bar_chart"');
+    expect(serialized).toContain('"const":"tournament_list"');
+    expect(serialized).toContain('"ft_rate"');
   });
 });
