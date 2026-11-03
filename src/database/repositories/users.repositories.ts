@@ -14,23 +14,6 @@ export class UsersRepository {
     return this.prismaService.user.findUnique(findUniqueDTO);
   }
 
-  findMany() {
-    return this.prismaService.user.findMany({
-      select: {
-        name: true,
-        email: true,
-        createdAt: true,
-        Bank: {
-          include: {
-            deposits: { orderBy: { date: 'desc' } },
-            withdrawals: { orderBy: { date: 'desc' } },
-            rakes: { orderBy: { date: 'desc' } },
-          },
-        },
-      },
-    });
-  }
-
   setResetToken(
     userId: string,
     resetTokenHash: string,

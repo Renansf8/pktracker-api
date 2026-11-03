@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { plainToInstance } from 'class-transformer';
 import {
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -37,6 +38,11 @@ class Env {
   @IsString()
   @IsNotEmpty()
   frontendUrl: string;
+
+  /** Serves the Swagger UI at /docs. Off unless ENABLE_SWAGGER=true, so it
+   *  stays closed in production even if nobody sets NODE_ENV. */
+  @IsBoolean()
+  enableSwagger: boolean;
 }
 
 export const env: Env = plainToInstance(Env, {
@@ -46,15 +52,14 @@ export const env: Env = plainToInstance(Env, {
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromEmail: process.env.RESEND_FROM_EMAIL,
   frontendUrl: process.env.FRONTEND_URL,
+  enableSwagger: process.env.ENABLE_SWAGGER === 'true',
 });
 
 const errors = validateSync(env);
 
 if (errors.length > 0) {
   const invalidFields = errors.map((error) => error.property).join(', ');
-  throw new Error(
-    `Invalid or missing environment variables: ${invalidFields}`,
-  );
+  throw new Error(`Invalid or missing environment variables: ${invalidFields}`);
 }
 
 /**
