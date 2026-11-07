@@ -1,12 +1,9 @@
 import {
   BadGatewayException,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
   Logger,
   ServiceUnavailableException,
-  UnprocessableEntityException,
 } from '@nestjs/common';
 import Anthropic from '@anthropic-ai/sdk';
 import { env } from '../../shared/config/env';
@@ -26,6 +23,9 @@ import {
   WidgetSpec,
 } from './genui.schema';
 import { GENUI_SYSTEM_PROMPT } from './genui.prompt';
+import { callClaude, replyText } from './genui.model';
+import { GenUiQuota } from './genui.quota';
+import { barLabel, safeCurrencies, safePlatforms } from './genui.format';
 import type {
   GeneratedDashboard,
   GroupStatsRow,
@@ -37,8 +37,6 @@ export const ANTHROPIC_CLIENT = Symbol('ANTHROPIC_CLIENT');
 
 const MAX_WIDGETS = 6;
 const MAX_TITLE_LENGTH = 80;
-/** Generations per user per day. In memory, so it resets on restart. */
-const DAILY_LIMIT = 30;
 /** Above this many points a line chart moves to a coarser bucket. */
 const MAX_LINE_POINTS = 120;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -85,14 +83,11 @@ const UNITS: Record<string, ValueUnit> = {
 @Injectable()
 export class GenUiService {
   private readonly logger = new Logger(GenUiService.name);
-  private readonly usageByUser = new Map<
-    string,
-    { day: string; count: number }
-  >();
 
   constructor(
     @Inject(ANTHROPIC_CLIENT) private readonly client: Anthropic | null,
     private readonly insightsRepository: InsightsRepository,
+    private readonly quota: GenUiQuota,
   ) {}
 
   async generateDashboard(
@@ -104,16 +99,29 @@ export class GenUiService {
         'Geração de dashboards não está configurada no servidor.',
       );
     }
-    this.consumeDailyQuota(userId);
+    this.quota.consume(userId, 'dashboard');
 
     const context = await this.insightsRepository.getUserContext(userId);
     const rawSpec = await this.requestSpec(userId, prompt, context);
-    const spec = this.normalizeSpec(rawSpec, context);
-    const data = await Promise.all(
-      spec.widgets.map((widget) => this.resolveWidget(userId, widget)),
-    );
+    return this.resolveDashboard(userId, rawSpec, context);
+  }
 
-    return { spec, data };
+  /**
+   * Normalizes a spec against the user's data and runs the SQL for each
+   * widget. Always filtered by `userId`, whoever produced the spec.
+   */
+  async resolveDashboard(
+    userId: string,
+    spec: DashboardSpecType,
+    context?: UserTournamentContext,
+  ): Promise<GeneratedDashboard> {
+    const userContext =
+      context ?? (await this.insightsRepository.getUserContext(userId));
+    const normalized = this.normalizeSpec(spec, userContext);
+    const data = await Promise.all(
+      normalized.widgets.map((widget) => this.resolveWidget(userId, widget)),
+    );
+    return { spec: normalized, data };
   }
 
   private async requestSpec(
@@ -130,50 +138,20 @@ export class GenUiService {
       lastTournamentDate: context.lastTournamentDate
         ? toIsoDate(context.lastTournamentDate)
         : null,
-      platforms: context.platforms,
-      currencies: context.currencies,
+      platforms: safePlatforms(context.platforms),
+      currencies: safeCurrencies(context.currencies),
     };
 
-    let response: Awaited<ReturnType<typeof this.callModel>>;
-    try {
-      response = await this.callModel(
-        `Today: ${today}\nPlayer context: ${JSON.stringify(playerContext)}\n\n<request>\n${prompt}\n</request>`,
-      );
-    } catch (error) {
-      if (error instanceof Anthropic.RateLimitError) {
-        throw new HttpException(
-          'O serviço de IA está ocupado. Tente de novo em instantes.',
-          HttpStatus.TOO_MANY_REQUESTS,
-        );
-      }
-      if (error instanceof Anthropic.APIConnectionError) {
-        this.logger.error(`genui connection error: ${error.message}`);
-        throw new ServiceUnavailableException(
-          'Não foi possível falar com o serviço de IA.',
-        );
-      }
-      if (error instanceof Anthropic.APIError) {
-        this.logger.error(
-          `genui API error status=${error.status} type=${error.type}: ${error.message}`,
-        );
-        throw new BadGatewayException(
-          'O serviço de IA retornou um erro. Tente de novo mais tarde.',
-        );
-      }
-      throw error;
-    }
-
-    this.logger.log(
-      `genui user=${userId} model=${response.model} stop=${response.stop_reason} ` +
-        `input_tokens=${response.usage.input_tokens} output_tokens=${response.usage.output_tokens} ` +
-        `cache_read=${response.usage.cache_read_input_tokens ?? 0}`,
-    );
-
-    if (response.stop_reason === 'refusal') {
-      throw new UnprocessableEntityException(
-        'Não consigo montar um dashboard para esse pedido.',
-      );
-    }
+    const response = await callClaude(this.client, this.logger, {
+      tag: 'genui',
+      userId,
+      model: env.genuiModel,
+      system: GENUI_SYSTEM_PROMPT,
+      schema: DASHBOARD_JSON_SCHEMA,
+      content: `Today: ${today}\nPlayer context: ${JSON.stringify(playerContext)}\n\n<request>\n${prompt}\n</request>`,
+      maxTokens: 8000,
+      refusalMessage: 'Não consigo montar um dashboard para esse pedido.',
+    });
 
     const spec =
       response.stop_reason === 'end_turn' ? parseSpec(response) : null;
@@ -186,32 +164,6 @@ export class GenUiService {
       );
     }
     return spec;
-  }
-
-  private callModel(content: string) {
-    return this.client.messages.create({
-      model: env.genuiModel,
-      max_tokens: 8000,
-      system: GENUI_SYSTEM_PROMPT,
-      output_config: {
-        effort: 'low',
-        format: { type: 'json_schema', schema: DASHBOARD_JSON_SCHEMA },
-      },
-      messages: [{ role: 'user', content }],
-    });
-  }
-
-  private consumeDailyQuota(userId: string) {
-    const day = toIsoDate(new Date());
-    const usage = this.usageByUser.get(userId);
-    const count = usage?.day === day ? usage.count : 0;
-    if (count >= DAILY_LIMIT) {
-      throw new HttpException(
-        `Limite de ${DAILY_LIMIT} dashboards por dia atingido.`,
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-    this.usageByUser.set(userId, { day, count: count + 1 });
   }
 
   /**
@@ -271,6 +223,7 @@ export class GenUiService {
           type: 'stat',
           unit: UNITS[widget.metric],
           value: pickMetric(stats, widget.metric),
+          tournaments: stats.tournaments,
         };
       }
       case 'line_chart': {
@@ -347,12 +300,8 @@ export class GenUiService {
 }
 
 function parseSpec(response: Anthropic.Message): DashboardSpecType | null {
-  const text = response.content
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('');
   try {
-    const result = DashboardSpec.safeParse(JSON.parse(text));
+    const result = DashboardSpec.safeParse(JSON.parse(replyText(response)));
     return result.success ? result.data : null;
   } catch {
     return null;
@@ -440,26 +389,6 @@ function toFilter(period: PeriodSpec, platform: string | null): InsightsFilter {
 
 function round(value: number): number {
   return Math.round(value * 100) / 100;
-}
-
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
-  BRL: 'R$',
-};
-
-/** "Bounty Hunters $10 (GG)": a tournament name alone is ambiguous, so bars
- *  add the buy-in, and the platform unless the widget is filtered to one. */
-function barLabel(stats: GroupStatsRow, widgetPlatform: string | null): string {
-  if (!stats.entry) return stats.label;
-  const { platform, currency, buyIn } = stats.entry;
-  const price =
-    buyIn === null
-      ? 'Ticket'
-      : `${CURRENCY_SYMBOLS[currency] ?? `${currency} `}${buyIn}`;
-  return widgetPlatform
-    ? `${stats.label} ${price}`
-    : `${stats.label} ${price} (${platform})`;
 }
 
 export function toGroupStats(row: AggregateRow | undefined): GroupStatsRow {

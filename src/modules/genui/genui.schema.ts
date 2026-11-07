@@ -153,7 +153,9 @@ export const DASHBOARD_JSON_SCHEMA = toStructuredOutputSchema(
   z.toJSONSchema(DashboardSpec, { reused: 'inline', io: 'output' }),
 );
 
-function toStructuredOutputSchema(node: unknown): Record<string, unknown> {
+export function toStructuredOutputSchema(
+  node: unknown,
+): Record<string, unknown> {
   if (Array.isArray(node)) {
     return node.map(toStructuredOutputSchema) as unknown as Record<
       string,

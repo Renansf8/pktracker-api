@@ -28,6 +28,7 @@ Optional, for generated dashboards (`/genui`):
 ```
 ANTHROPIC_API_KEY=sk-ant-...      # without it, /genui answers 503 and everything else works
 GENUI_MODEL=claude-haiku-5-5      # default
+GENUI_COMMENTARY_MODEL=...        # optional model for /genui/dashboard/commentary; falls back to GENUI_MODEL
 ```
 
 Optional: `ENABLE_SWAGGER=true` serves the Swagger UI at `/docs` (off by default, keep it off in production).
@@ -97,6 +98,7 @@ All endpoints except `/auth/*` require a `Bearer <token>` JWT header.
 | GET | `/tournaments` | List tournaments (optional `?platform=` filter, ordered by date desc) |
 | DELETE | `/tournaments/:id` | Delete a tournament and reverse its effect on the bank |
 | POST | `/genui/dashboard` | `{ prompt }` → Claude picks widgets from a fixed catalog (`genui.schema.ts`); returns `{ spec, data }`. 30/day per user (in memory) |
+| POST | `/genui/dashboard/commentary` | `{ spec, prompt? }` → recomputes the data server-side for the token's user and returns `{ commentary }`: sentences written by Claude over numbered facts, with `{fN}` markers expanded into segments (the model writes no numbers). Separate quota: 30/day per user (in memory). Sends the dashboard's numbers and tournament names to Anthropic |
 
 ## Domain logic notes
 

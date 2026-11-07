@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import type Anthropic from '@anthropic-ai/sdk';
 import { GenUiService } from './genui.service';
+import { GenUiQuota } from './genui.quota';
 import { DASHBOARD_JSON_SCHEMA, DashboardSpecType } from './genui.schema';
 import type {
   InsightsRepository,
@@ -53,13 +54,18 @@ function setup() {
   const service = new GenUiService(
     client,
     repository as unknown as InsightsRepository,
+    new GenUiQuota(),
   );
   return { service, create, repository };
 }
 
 describe('GenUiService', () => {
   it('answers 503 when no API key is configured', async () => {
-    const service = new GenUiService(null, {} as InsightsRepository);
+    const service = new GenUiService(
+      null,
+      {} as InsightsRepository,
+      new GenUiQuota(),
+    );
     await expect(service.generateDashboard('u1', 'roi')).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
@@ -166,6 +172,7 @@ describe('GenUiService', () => {
       type: 'stat',
       unit: 'percent',
       value: 50,
+      tournaments: 3,
     });
     expect(result.data[1]).toEqual({
       type: 'bar_chart',
@@ -339,12 +346,12 @@ describe('GenUiService', () => {
     const result = await service.generateDashboard('u1', 'x');
 
     expect(result.data).toEqual([
-      { type: 'stat', unit: 'percent', value: 25 },
-      { type: 'stat', unit: 'percent', value: 12.5 },
-      { type: 'stat', unit: 'count', value: 1 },
-      { type: 'stat', unit: 'count', value: 3 },
-      { type: 'stat', unit: 'money', value: 12.5 },
-      { type: 'stat', unit: 'money', value: 150 },
+      expect.objectContaining({ type: 'stat', unit: 'percent', value: 25 }),
+      expect.objectContaining({ type: 'stat', unit: 'percent', value: 12.5 }),
+      expect.objectContaining({ type: 'stat', unit: 'count', value: 1 }),
+      expect.objectContaining({ type: 'stat', unit: 'count', value: 3 }),
+      expect.objectContaining({ type: 'stat', unit: 'money', value: 12.5 }),
+      expect.objectContaining({ type: 'stat', unit: 'money', value: 150 }),
     ]);
 
     create.mockResolvedValue(
@@ -355,7 +362,7 @@ describe('GenUiService', () => {
       }),
     );
     const invested = await service.generateDashboard('u1', 'x');
-    expect(invested.data[0]).toEqual({
+    expect(invested.data[0]).toMatchObject({
       type: 'stat',
       unit: 'money',
       value: 80,

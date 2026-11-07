@@ -7,6 +7,8 @@ export type ValueUnit = 'money' | 'percent' | 'count';
 export interface StatData {
   type: 'stat';
   value: number | null;
+  /** Tournaments behind the value (0 = nothing in the period). */
+  tournaments?: number;
   unit: ValueUnit;
 }
 

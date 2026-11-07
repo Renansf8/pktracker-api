@@ -1,8 +1,4 @@
-import {
-  registerDecorator,
-  ValidationArguments,
-  ValidationOptions,
-} from 'class-validator';
+import { registerDecorator, ValidationOptions } from 'class-validator';
 
 export function IsNumberOrTicket(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -15,7 +11,7 @@ export function IsNumberOrTicket(validationOptions?: ValidationOptions) {
         ...validationOptions,
       },
       validator: {
-        validate(value: any, _args: ValidationArguments) {
+        validate(value: any) {
           return (
             value === 'ticket' || (typeof value === 'number' && isFinite(value))
           );
