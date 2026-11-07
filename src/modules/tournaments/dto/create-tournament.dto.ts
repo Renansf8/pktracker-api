@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
 } from 'class-validator';
 import { IsNumberOrTicket } from 'src/shared/validators/is-number-or-ticket.validator';
 
@@ -27,9 +28,14 @@ export class CreateTournamentDto {
   @IsNumberOrTicket()
   buyIn: number | 'ticket';
 
-  @ApiProperty({ example: 'USD' })
+  @ApiProperty({
+    example: 'USD',
+    description: 'ISO-style code: three capital letters',
+  })
   @IsString()
-  @IsNotEmpty()
+  @Matches(/^[A-Z]{3}$/, {
+    message: 'currency must be 3 capital letters, e.g. USD',
+  })
   currency: string;
 
   @ApiPropertyOptional({

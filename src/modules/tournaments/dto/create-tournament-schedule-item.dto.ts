@@ -19,7 +19,9 @@ export class CreateTournamentScheduleItemDto {
 
   @ApiProperty({ example: 'USD' })
   @IsString()
-  @IsNotEmpty()
+  @Matches(/^[A-Z]{3}$/, {
+    message: 'currency must be 3 capital letters, e.g. USD',
+  })
   currency: string;
 
   @ApiProperty({ example: '20:00', description: 'Time in HH:mm format' })
