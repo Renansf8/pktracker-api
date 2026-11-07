@@ -14,13 +14,6 @@ import { ActiveUserId } from 'src/shared/decorators/ActiveUserId';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
-  @ApiOperation({ summary: 'List all users' })
-  @ApiResponse({ status: 200, description: 'List of users' })
-  findAll() {
-    return this.usersService.getAllUsers();
-  }
-
   @Get('/me')
   @ApiOperation({ summary: 'Get current authenticated user' })
   @ApiResponse({ status: 200, description: 'User details' })

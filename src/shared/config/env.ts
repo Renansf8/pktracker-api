@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { plainToInstance } from 'class-transformer';
 import {
+  IsBoolean,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -48,6 +49,16 @@ class Env {
   @IsString()
   @IsNotEmpty()
   genuiModel: string;
+
+  /** Optional model for dashboard commentary; falls back to genuiModel. */
+  @IsOptional()
+  @IsString()
+  genuiCommentaryModel?: string;
+
+  /** Serves the Swagger UI at /docs. Off unless ENABLE_SWAGGER=true, so it
+   *  stays closed in production even if nobody sets NODE_ENV. */
+  @IsBoolean()
+  enableSwagger: boolean;
 }
 
 export const env: Env = plainToInstance(Env, {
@@ -59,6 +70,9 @@ export const env: Env = plainToInstance(Env, {
   frontendUrl: process.env.FRONTEND_URL,
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || undefined,
   genuiModel: process.env.GENUI_MODEL || 'claude-haiku-5-5',
+  genuiCommentaryModel: process.env.GENUI_COMMENTARY_MODEL || undefined,
+
+  enableSwagger: process.env.ENABLE_SWAGGER === 'true',
 });
 
 const errors = validateSync(env);

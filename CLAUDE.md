@@ -30,6 +30,10 @@ ANTHROPIC_API_KEY=sk-ant-...      # without it, /genui answers 503 and everythin
 GENUI_MODEL=claude-haiku-5-5      # default
 ```
 
+Optional: `ENABLE_SWAGGER=true` serves the Swagger UI at `/docs` (off by default, keep it off in production).
+
+Auth routes are rate limited per IP + email (`AuthThrottlerGuard`): signin and reset 10/min, signup 5/min, forgot-password 3/min. `helmet` sets HSTS and the other security headers.
+
 ## Running the project
 
 ```bash
